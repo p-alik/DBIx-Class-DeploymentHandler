@@ -1,5 +1,5 @@
 package DBIx::Class::DeploymentHandler::DeployMethod::SQL::Translator::Deprecated;
-use Moose;
+use Moo;
 
 # ABSTRACT: (DEPRECATED) Use this if you are stuck in the past
 
@@ -40,8 +40,6 @@ sub _ddl_schema_up_consume_filenames {
   my ($self, $type, $versions) = @_;
   return [$self->_ddl_schema_up_produce_filename($type, $versions)]
 }
-
-__PACKAGE__->meta->make_immutable;
 
 1;
 

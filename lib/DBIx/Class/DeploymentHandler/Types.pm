@@ -4,23 +4,37 @@ use warnings;
 
 # ABSTRACT: Types internal to DBIx::Class::DeploymentHandler
 
-use Moose::Util::TypeConstraints;
-subtype 'DBIx::Class::DeploymentHandler::Databases'
- => as 'ArrayRef[Str]';
+use Sub::Quote 'quote_sub';
 
-coerce 'DBIx::Class::DeploymentHandler::Databases'
- => from 'Str'
- => via { [$_] };
+use Sub::Exporter -setup => {
+  exports => [ qw(Storage ResultSet StrSchemaVersion) ],
+};
 
-subtype 'StrSchemaVersion'
- => as 'Str'
- => message {
-  defined $_
-    ? "Schema version (currently '$_') must be a string"
-    : 'Schema version must be defined'
- };
+sub ResultSet {
+quote_sub(q{
+     use Check::ISA;
+     obj($_[0], 'DBIx::Class::ResultSet')
+        or die 'version_rs should be a DBIx::Class::ResultSet!'
+  })
+}
 
-no Moose::Util::TypeConstraints;
+sub Storage {
+quote_sub(q{
+     use Check::ISA;
+     obj($_[0], 'DBIx::Class::Storage')
+        or die 'storage should be a DBIx::Class::Storage!'
+  })
+}
+
+sub StrSchemaVersion {
+  quote_sub(q{
+    die(defined $_[0]
+      ? "Schema version (currently '$_[0]') must be a string"
+      : 'Schema version must be defined'
+    ) unless ref(\$_[0]) eq 'SCALAR'
+  })
+}
+
 1;
 
 # vim: ts=2 sw=2 expandtab

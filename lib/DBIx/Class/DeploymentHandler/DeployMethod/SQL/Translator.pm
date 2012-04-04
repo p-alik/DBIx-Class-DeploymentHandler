@@ -1,7 +1,10 @@
 package DBIx::Class::DeploymentHandler::DeployMethod::SQL::Translator;
-use Moose;
+use Moo;
 
 # ABSTRACT: Manage your SQL and Perl migrations in nicely laid out directories
+
+use Sub::Quote 'quote_sub';
+use MooX::Types::MooseLike::Base qw(ArrayRef Bool HashRef Str);
 
 use autodie;
 use Carp qw( carp croak );
@@ -13,8 +16,7 @@ use Try::Tiny;
 use SQL::Translator;
 require SQL::Translator::Diff;
 
-require DBIx::Class::Storage;   # loaded for type constraint
-use DBIx::Class::DeploymentHandler::Types;
+use DBIx::Class::DeploymentHandler::Types 'Storage';
 
 use File::Path 'mkpath';
 use File::Spec::Functions;
@@ -22,15 +24,13 @@ use File::Spec::Functions;
 with 'DBIx::Class::DeploymentHandler::HandlesDeploy';
 
 has ignore_ddl => (
-  isa      => 'Bool',
+  isa      => Bool,
   is       => 'ro',
-  default  => undef,
 );
 
 has force_overwrite => (
-  isa      => 'Bool',
+  isa      => Bool,
   is       => 'ro',
-  default  => undef,
 );
 
 has schema => (
@@ -39,9 +39,9 @@ has schema => (
 );
 
 has storage => (
-  isa        => 'DBIx::Class::Storage',
+  isa        => Storage,
   is         => 'ro',
-  lazy_build => 1,
+  builder    => '_build_storage',
 );
 
 sub _build_storage {
@@ -52,34 +52,40 @@ sub _build_storage {
 }
 
 has sql_translator_args => (
-  isa => 'HashRef',
+  isa => HashRef,
   is  => 'ro',
-  default => sub { {} },
+  default => quote_sub(q( {} )),
 );
+
 has script_directory => (
-  isa      => 'Str',
+  isa      => Str,
   is       => 'ro',
-  required => 1,
-  default  => 'sql',
+  default  => quote_sub(q{ 'sql' }),
 );
 
 has databases => (
-  coerce  => 1,
-  isa     => 'DBIx::Class::DeploymentHandler::Databases',
   is      => 'ro',
-  default => sub { [qw( MySQL SQLite PostgreSQL )] },
+  #isa     => ArrayRef[Str],
+  #coerce  => quote_sub(q{
+     #if (ref(\$_[0]) eq 'SCALAR') {
+        #return [$_[0]]
+     #} else {
+        #return $_[0]
+     #}
+  #}),
+  default => quote_sub(q{ [qw( MySQL SQLite PostgreSQL )] }),
 );
 
 has txn_wrap => (
   is => 'ro',
-  isa => 'Bool',
-  default => 1,
+  isa => Bool,
+  default => quote_sub(q{ 1 }),
 );
 
 has schema_version => (
   is => 'ro',
-  isa => 'Str',
-  lazy_build => 1,
+  isa => Str,
+  builder => '_build_schema_version',
 );
 
 # this will probably never get called as the DBICDH
@@ -510,7 +516,7 @@ sub _prepare_install {
   my $from_file = shift;
   my $to_file   = shift;
   my $dir       = $self->script_directory;
-  my $databases = $self->databases;
+  my $databases = ref $self->databases ? $self->databases : [$self->databases];
   my $version   = $self->schema_version;
 
   foreach my $db (@$databases) {
@@ -624,7 +630,7 @@ sub _coderefs_per_files {
 sub _prepare_changegrade {
   my ($self, $from_version, $to_version, $version_set, $direction) = @_;
   my $schema    = $self->schema;
-  my $databases = $self->databases;
+  my $databases = ref $self->databases ? $self->databases : [$self->databases];
   my $dir       = $self->script_directory;
 
   my $schema_version = $self->schema_version;

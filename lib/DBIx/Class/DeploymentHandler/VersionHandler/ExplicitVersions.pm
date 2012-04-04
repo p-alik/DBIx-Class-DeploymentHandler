@@ -1,5 +1,6 @@
 package DBIx::Class::DeploymentHandler::VersionHandler::ExplicitVersions;
-use Moose;
+use Moo;
+use MooX::Types::MooseLike::Base qw(Str ArrayRef Int HashRef);
 
 # ABSTRACT: Define your own list of versions to use for migrations
 
@@ -8,35 +9,37 @@ use Carp 'croak';
 with 'DBIx::Class::DeploymentHandler::HandlesVersioning';
 
 has schema_version => (
-  isa      => 'Str',
+  isa      => Str,
   is       => 'ro',
   required => 1,
 );
 
 has database_version => (
-  isa      => 'Str',
+  isa      => Str,
   is       => 'ro',
   required => 1,
 );
 
 has to_version => (
   is         => 'ro',
-  isa        => 'Str',
-  lazy_build => 1,
+  isa        => Str,
+  builder => '_build_to_version',
+  lazy => 1,
 );
 
 sub _build_to_version { $_[0]->schema_version }
 
 has ordered_versions => (
   is       => 'ro',
-  isa      => 'ArrayRef',
+  isa      => ArrayRef,
   required => 1,
 );
 
 has _index_of_versions => (
   is         => 'ro',
-  isa        => 'HashRef',
-  lazy_build => 1,
+  isa        => HashRef,
+  builder => '_build__index_of_versions',
+  lazy => 1,
 );
 
 sub _build__index_of_versions {
@@ -50,8 +53,9 @@ sub _build__index_of_versions {
 
 has _version_idx => (
   is         => 'rw',
-  isa        => 'Int',
-  lazy_build => 1,
+  isa        => Int,
+  builder => '_build__version_idx',
+  lazy => 1,
 );
 
 sub _build__version_idx { $_[0]->_index_of_versions->{$_[0]->database_version} }
@@ -99,8 +103,6 @@ sub previous_version_set {
     ];
   }
 }
-
-__PACKAGE__->meta->make_immutable;
 
 1;
 

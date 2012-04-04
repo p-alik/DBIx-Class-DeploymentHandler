@@ -2,11 +2,11 @@ package DBIx::Class::DeploymentHandler::Dad;
 
 # ABSTRACT: Parent class for DeploymentHandlers
 
-use Moose;
-require DBIx::Class::Schema;    # loaded for type constraint
+use Moo;
 use Carp::Clan '^DBIx::Class::DeploymentHandler';
 use DBIx::Class::DeploymentHandler::LogImporter ':log';
-use DBIx::Class::DeploymentHandler::Types;
+use DBIx::Class::DeploymentHandler::Types 'StrSchemaVersion';
+use MooX::Types::MooseLike::Base qw(Str);
 
 has schema => (
   is       => 'ro',
@@ -14,23 +14,23 @@ has schema => (
 );
 
 has backup_directory => (
-  isa => 'Str',
+  isa => Str,
   is  => 'ro',
   predicate  => 'has_backup_directory',
 );
 
 has to_version => (
   is         => 'ro',
-  isa        => 'Str',
-  lazy_build => 1,
+  isa        => Str,
+  builder    => '_build_to_version',
 );
 
 sub _build_to_version { $_[0]->schema_version }
 
 has schema_version => (
   is         => 'ro',
-  isa        => 'StrSchemaVersion',
-  lazy_build => 1,
+  isa        => StrSchemaVersion,
+  builder    => '_build_schema_version',
 );
 
 sub _build_schema_version { $_[0]->schema->schema_version }
@@ -96,8 +96,6 @@ sub backup {
   log_info { 'backing up' };
   $self->schema->storage->backup($self->backup_directory)
 }
-
-__PACKAGE__->meta->make_immutable;
 
 1;
 

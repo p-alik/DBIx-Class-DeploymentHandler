@@ -1,6 +1,7 @@
 package DBIx::Class::DeploymentHandler::VersionStorage::Standard;
-use Moose;
+use Moo;
 use DBIx::Class::DeploymentHandler::LogImporter ':log';
+use DBIx::Class::DeploymentHandler::Types 'ResultSet';
 
 # ABSTRACT: Version storage that does the normal stuff
 
@@ -12,7 +13,7 @@ has schema => (
 );
 
 has version_rs => (
-  isa        => 'DBIx::Class::ResultSet',
+  isa        => ResultSet,
   is         => 'ro',
   builder    => '_build_version_rs',
   handles    => [qw( database_version version_storage_is_installed )],
@@ -39,8 +40,6 @@ sub delete_database_version {
   log_debug { "Deleting database version $version" };
   $_[0]->version_rs->search({ version => $version})->delete
 }
-
-__PACKAGE__->meta->make_immutable;
 
 1;
 
