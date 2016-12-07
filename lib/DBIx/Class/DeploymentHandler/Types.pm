@@ -17,7 +17,7 @@ subtype 'StrSchemaVersion'
  => as 'Str'
  => message {
   defined $_
-    ? "Schema version (currently '$_') must be a string"
+    ? "Schema version (currently '$_') must be a string or an object of version"
     : 'Schema version must be defined'
  };
 
